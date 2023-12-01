@@ -30,8 +30,9 @@ weather_df =
 
 ```{r r2}
 weather_model = lm(data = weather_df, tmax ~ tmin + prcp) 
+  model_r = broom::glance(weather_model)
 
-r_squared = weather_model[["r.squared"]]
+r_squared = model_r[["r.squared"]]
 weather_df = 
   weather_df|> 
   mutate (r_squared = r_squared)
@@ -40,16 +41,15 @@ summary(weather_model)
 ```
 
 ```{r beta_coef}
-weather_model = lm(tmax ~ tmin + prcp, data = weather_df)
-  model_coef = broom::tidy(weather_model)
-beta_tmin <- model_coef |> filter(term == "tmin") |> pull(estimate)
-beta_prcp <- model_coef |> filter(term == "prcp") |> pull(estimate)
+model_coef = broom::tidy(weather_model)
 
-weather_df = 
-    weather_df |>
-    mutate(log = ifelse(beta_tmin > 0 & beta_prcp > 0, log(beta_tmin * beta_prcp), NA)) 
+beta_tmin = model_coef |> filter(term == "tmin") |> pull(estimate)
+beta_prcp = model_coef |> filter(term == "prcp") |> pull(estimate)
+
+log_beta = log(beta_tmin * beta_prcp) 
 ```
 
+We are unable to calculate `log beta` because `βprcp` is a negative value. We expect `NaN` for `log_beta`.
 
 
 
