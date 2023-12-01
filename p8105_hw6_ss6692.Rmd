@@ -8,7 +8,10 @@ output: github_document
 
 ```{r loading_libraries}
 library(tidyverse)
+library(dplyr)
 library(p8105.datasets)
+library(modelr)
+library(mgcv)
 ```
 
 ```{r loading weather_df}
@@ -24,4 +27,29 @@ weather_df =
     tmax = tmax / 10) |>
   select(name, id, everything())
 ```
+
+```{r r2}
+weather_model = lm(data = weather_df, tmax ~ tmin + prcp) 
+
+r_squared = weather_model[["r.squared"]]
+weather_df = 
+  weather_df|> 
+  mutate (r_squared = r_squared)
+
+summary(weather_model)
+```
+
+```{r beta_coef}
+weather_model = lm(tmax ~ tmin + prcp, data = weather_df)
+  model_coef = broom::tidy(weather_model)
+beta_tmin <- model_coef |> filter(term == "tmin") |> pull(estimate)
+beta_prcp <- model_coef |> filter(term == "prcp") |> pull(estimate)
+
+weather_df = 
+    weather_df |>
+    mutate(log = ifelse(beta_tmin > 0 & beta_prcp > 0, log(beta_tmin * beta_prcp), NA)) 
+```
+
+
+
 
