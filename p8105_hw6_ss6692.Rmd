@@ -30,7 +30,9 @@ weather_df =
 
 ```{r r2}
 weather_model = lm(data = weather_df, tmax ~ tmin + prcp) 
-  model_r = broom::glance(weather_model)
+  model_r = broom::glance(weather_model)|>
+  select(r.squared)
+tibble(model_r)
 
 r_squared = model_r[["r.squared"]]
 weather_df = 
@@ -51,5 +53,27 @@ log_beta = log(beta_tmin * beta_prcp)
 
 We are unable to calculate `log beta` because `βprcp` is a negative value. We expect `NaN` for `log_beta`.
 
+```{r}
+boot_sample = function(df) {
+  sample_frac(df, replace = TRUE)
+}
 
+
+```
+
+```{r}
+boot_sample(model_r) |> 
+  ggplot(aes(x = x, y = y)) + 
+  geom_point(alpha = .5) +
+  stat_smooth(method = "lm")
+```
+
+```{r}
+boot_straps = 
+  tibble(strap_number = 1:5000) |> 
+  mutate(
+    strap_sample = map(strap_number, \(i) boot_sample(weather_df))
+  ) |> 
+  unnest(strap_sample)
+```
 
