@@ -77,7 +77,8 @@ boot_straps |>
   ggplot(aes(x = log_beta_product)) + 
   geom_density()
 ```
-There are `322 non-finite values`, which will not be included in the `log(βprcp*βtmin)` plot.
+
+There are `3341 non-finite values`, which will not be included in the `log(βprcp*βtmin)` plot.
 
 ### Problem 3
 Cleaning birthweight data
@@ -97,6 +98,7 @@ menarche_bwt =
 ```
 
 Plotting residuals using `add_predictions` and `add residuals`
+
 ```{r residual}
 birthweight |> 
   modelr::add_predictions(menarche_bwt) |> 
@@ -108,7 +110,7 @@ birthweight |>
        y = "Residuals")
 ```
 
-Creating models to compare my model to.
+Creating two comparison models.
 
 ```{r comparison}
 comparison_1 = 
@@ -120,7 +122,7 @@ comparison_2 =
   lm(bwt ~ babysex*bhead*blength, data = _)
 ```
 
-Comparing my model to the two comparison models.
+Plotting my model against the comparison models.
 
 ```{r comparison_plots}
 birthweight |> 
