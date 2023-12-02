@@ -91,12 +91,13 @@ For my proposed model, I will investigate the relationship between the mother's 
 
 ```{r}
 menarche_bwt = 
-  birthweight |> 
-  lm(bwt ~ menarche, data = _)
+  birthweight |> lm(bwt ~ menarche, data = _)
+
 ```
 
+Plotting residuals using `add_predictions` and `add residuals`
 ```{r}
-birthweight_resids = birthweight |> 
+birthweight |> 
   modelr::add_predictions(menarche_bwt) |> 
   modelr::add_residuals(menarche_bwt) |> 
   ggplot(aes(x = pred, y = resid)) + 
@@ -104,6 +105,30 @@ birthweight_resids = birthweight |>
   labs(title = "Residuals vs. Fitted Values",
        x = "Fitted Values",
        y = "Residuals")
-
 ```
+
+Creating models to compare my model to.
+
+```{r}
+comparison_1 = 
+  birthweight |> 
+  lm(bwt ~ blength + gaweeks, data = _)
+
+comparison_2 = 
+  birthweight |> 
+  lm(bwt ~ babysex*bhead*blength, data = _)
+```
+
+Comparing my model to the two comparison models.
+
+```{r}
+birthweight |> 
+  gather_predictions(menarche_bwt, comparison_1, comparison_2) |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = blength, y = bwt)) + 
+  geom_point(alpha = .5) +
+  geom_line(aes(y = pred), color = "red") + 
+  facet_grid(~model)
+```
+
 
