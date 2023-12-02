@@ -156,6 +156,8 @@ cv_data =
     rmse_comparison2 = map2_dbl(comparison_2, test, \(mod, df) rmse(model = mod, data = df)))
 ```
 
+Plotting RMSE values for the proposed model and two comparison models
+
 ```{r}
 cv_data |> 
   select(starts_with("rmse")) |> 
