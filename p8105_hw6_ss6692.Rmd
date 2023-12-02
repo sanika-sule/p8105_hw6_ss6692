@@ -131,4 +131,41 @@ birthweight |>
   facet_grid(~model)
 ```
 
+Comparing using `crossv_mc`
 
+```{r}
+cv_data =
+  crossv_mc(birthweight, 100) |> 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+```
+
+RMSE value distribution for the two candidate models.
+
+```{r}
+cv_data = 
+  cv_data |> 
+  mutate(
+    model_mod  = map(train, \(df) lm(bwt ~ menarche, data = df)),
+    comparison_1     = map(train, \(df) lm(bwt ~ blength + gaweeks, data = df)),
+    comparison_2  = map(train, \(df) lm(bwt ~ babysex*bhead*blength, data = df))) |> 
+  mutate(
+    rmse_model = map2_dbl(model_mod, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_comparison1    = map2_dbl(comparison_1, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_comparison2 = map2_dbl(comparison_2, test, \(mod, df) rmse(model = mod, data = df)))
+```
+
+```{r}
+cv_data |> 
+  select(starts_with("rmse")) |> 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+```
+
+The comparison 2 distribution shows the lowest RMSE values, and therefore has the best predictive ability.The proposed model has very high RMSE values, indicating that mother's age at menarche has low predictive accuracy.
