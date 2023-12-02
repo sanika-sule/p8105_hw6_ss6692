@@ -1,7 +1,7 @@
 ---
 title: "p8105_hw6_ss6692"
 author: "Sanika Sule"
-date: "`r Sys.Date()`"
+date: "`r Sys.Date()"
 output: github_document
 ---
 ### Problem 2
@@ -28,60 +28,26 @@ weather_df =
   select(name, id, everything())
 ```
 
-```{r r2}
-weather_model = lm(data = weather_df, tmax ~ tmin + prcp) 
-  model_r = broom::glance(weather_model)|>
-  select(r.squared)
-tibble(model_r)
-
-r_squared = model_r[["r.squared"]]
-weather_df = 
-  weather_df|> 
-  mutate (r_squared = r_squared)
-
-summary(weather_model)
-```
-
-```{r beta_coef}
-model_coef = broom::tidy(weather_model)
-
-beta_tmin = model_coef |> filter(term == "tmin") |> pull(estimate)
-beta_prcp = model_coef |> filter(term == "prcp") |> pull(estimate)
-
-model_coef =
-model_coef|>
-  mutate(log(beta_tmin * beta_prcp), NA)
-
-```
-
-Because `βprcp` is a negative value. We expect `NaN` values for `log_beta`.
-
-```{r}
-boot_sample = function(df) {
-  sample_frac(df, replace = TRUE)
-  
-model_r = data |>
-  select(r_squared)
-model_coef |>
-  select(log)
-tibble(
-  model_r,
-  model_coef
-)
-}
-```
-
-```{r}
+```{r boot_strapping}
 boot_sample = function(df) {
   sample_df = df |> sample_frac(size = 1, replace = TRUE)
   model = lm(tmax ~ tmin + prcp, data = sample_df)
+
+  # Getting r_squared values
   r_squared = broom::glance(model)[["r.squared"]]
-  return(data.frame(r_squared = r_squared))
-  
-coef_df = broom::tidy(model)
+
+  # Getting beta coefficients
+  coef_df = broom::tidy(model)
   beta_tmin = coef_df |> filter(term == "tmin") |> pull(estimate)
   beta_prcp = coef_df |> filter(term == "prcp") |> pull(estimate)
-    log_beta_product = log((beta_tmin)*(beta_prcp))
+  
+# Because `βprcp` is a negative value. We expect `NaN` values for `log_beta`.
+  
+  # Calculating log of the product of beta_tmin and beta_prcp
+  log_beta_product = log((beta_tmin) * (beta_prcp))
+
+  # Creating a dataframe with both r_squared and log_beta_product
+  return(data.frame(r_squared = r_squared, log_beta_product = log_beta_product))
 }
 
 boot_straps = 
@@ -100,8 +66,8 @@ boot_straps |>
 ```
 
 ```{r}
-boot_straps %>% 
+boot_straps |> 
   ggplot(aes(x = log_beta_product)) + 
   geom_density()
 ```
-
+There are `322 non-finite values`, which will not be included in the `log(βprcp*βtmin)` plot.
