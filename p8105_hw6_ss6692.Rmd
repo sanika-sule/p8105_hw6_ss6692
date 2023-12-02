@@ -48,32 +48,49 @@ model_coef = broom::tidy(weather_model)
 beta_tmin = model_coef |> filter(term == "tmin") |> pull(estimate)
 beta_prcp = model_coef |> filter(term == "prcp") |> pull(estimate)
 
-log_beta = log(beta_tmin * beta_prcp) 
+model_coef =
+model_coef|>
+  mutate(log(beta_tmin * beta_prcp), NA)
+
 ```
 
-We are unable to calculate `log beta` because `βprcp` is a negative value. We expect `NaN` for `log_beta`.
+Because `βprcp` is a negative value. We expect `NaN` values for `log_beta`.
 
 ```{r}
 boot_sample = function(df) {
   sample_frac(df, replace = TRUE)
+  
+model_r = data |>
+  select(r_squared)
+model_coef |>
+  select(log)
+tibble(
+  model_r,
+  model_coef
+)
+}
+```
+
+```{r}
+boot_sample = function(df) {
+  sample_df = df |> sample_frac(size = 1, replace = TRUE)
+  model = lm(tmax ~ tmin + prcp, data = sample_df)
+  r_squared = broom::glance(model)[["r.squared"]]
+  return(data.frame(r_squared = r_squared))
 }
 
-
-```
-
-```{r}
-boot_sample(model_r) |> 
-  ggplot(aes(x = x, y = y)) + 
-  geom_point(alpha = .5) +
-  stat_smooth(method = "lm")
-```
-
-```{r}
 boot_straps = 
-  tibble(strap_number = 1:5000) |> 
+  tibble(strap_number = 1:500) |> 
   mutate(
-    strap_sample = map(strap_number, \(i) boot_sample(weather_df))
+    bootstrap_results = map(strap_number, ~boot_sample(weather_df))
   ) |> 
-  unnest(strap_sample)
+  unnest(bootstrap_results)
+
+```
+
+```{r}
+boot_straps |> 
+  ggplot(aes(x = r_squared)) + 
+  geom_density()
 ```
 
